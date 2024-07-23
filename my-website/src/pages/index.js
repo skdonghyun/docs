@@ -3,7 +3,7 @@ import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import styles from './index.module.css';
-import { useHistory } from '@docusaurus/router';
+import SearchBar from '@theme/SearchBar';
 
 const systems = {
   internal: [
@@ -21,13 +21,6 @@ const systems = {
 
 function HomepageHeader() {
   const {siteConfig} = useDocusaurusContext();
-  const history = useHistory();
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    const searchTerm = e.target.search.value;
-    history.push(`/search?q=${encodeURIComponent(searchTerm)}`);
-  };
 
   return (
     <header className={styles.heroBanner}>
@@ -35,14 +28,7 @@ function HomepageHeader() {
         <h1 className={styles.title}>{siteConfig.title}</h1>
         <p className={styles.subtitle}>{siteConfig.tagline}</p>
         <div className={styles.searchContainer}>
-          <form onSubmit={handleSearch}>
-            <input 
-              type="search" 
-              name="search"
-              placeholder="문서 검색..." 
-              className={styles.searchInput} 
-            />
-          </form>
+          <SearchBar />
         </div>
       </div>
     </header>
