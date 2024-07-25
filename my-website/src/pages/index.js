@@ -41,7 +41,7 @@ function SystemGrid({title, systems}) {
       <h2 className={styles.sectionTitle}>{title}</h2>
       <div className={styles.systemGrid}>
         {systems.map((system) => (
-          <Link to={`/docs/system${system.id}`} key={system.id} className={styles.systemCard}>
+          <Link to={`/docs/intro`} key={system.id} className={styles.systemCard}>
             <div className={styles.systemIcon}>{system.icon}</div>
             <h3 className={styles.systemName}>{system.name}</h3>
           </Link>

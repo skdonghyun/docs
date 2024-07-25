@@ -11,9 +11,11 @@ const config = {
   title: 'My Site',
   tagline: 'Dinosaurs are cool',
   favicon: 'img/favicon.ico',
-
+  stylesheets: [
+    'src/css/custom.css',
+  ],
   // Set the production url of your site here
-  url: 'https://your-docusaurus-site.example.com',
+  url: 'https://localhost/',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
@@ -33,7 +35,25 @@ const config = {
     defaultLocale: 'en',
     locales: ['en'],
   },
-  plugins: [require.resolve('docusaurus-lunr-search')],
+  plugins: [
+    [
+      require.resolve('docusaurus-lunr-search'),
+      {
+        // 플러그인 특정 설정
+        hightlightSearchTermsOnTargetPage: true,
+        searchResultLimits: 8,
+        searchResultContextMaxLength: 50,
+        searchBarShortcut: true,
+        indexBaseUrl: true,
+        indexPages: true,
+        style: undefined,
+        lunr: {
+          tokenizerSeparator: /[\s\-/]+/,
+        },
+        // 추가 스타일링 옵션이 있다면 여기에 추가
+      },
+    ],
+  ],
   presets: [
     [
       'classic',
