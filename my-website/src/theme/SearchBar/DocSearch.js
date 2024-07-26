@@ -14,7 +14,7 @@ class DocSearch {
         baseUrl = '/',
         queryDataCallback = null,
         autocompleteOptions = {
-            debug: false,
+            debug: true,
             hint: false,
             autoselect: true
         },
@@ -237,7 +237,8 @@ class DocSearch {
                 title: displayTitle,
                 text,
                 url,
-                version
+                version,
+                system: hit.system // 시스템 이름 추가
             };
         });
     }

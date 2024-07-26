@@ -2,6 +2,8 @@ const prefix = 'algolia-docsearch';
 const suggestionPrefix = `${prefix}-suggestion`;
 const footerPrefix = `${prefix}-footer`;
 
+/* eslint-disable max-len */
+
 const templates = {
   suggestion: `
   <a class="${suggestionPrefix}
@@ -11,10 +13,15 @@ const templates = {
     aria-label="Link to the result"
     href="{{{url}}}"
     >
-    <div class="${suggestionPrefix}--category-header">
-        <span class="${suggestionPrefix}--category-header-lvl0">{{{category}}}</span>
+    <div class="${suggestionPrefix}--header">
+      <div class="${suggestionPrefix}--system-column">
+        <span class="${suggestionPrefix}--system-name">{{{system}}}</span>
+      </div>
     </div>
     <div class="${suggestionPrefix}--wrapper">
+      <div class="${suggestionPrefix}--category-header">
+        <span class="${suggestionPrefix}--category-header-lvl0">{{{category}}}</span>
+      </div>
       <div class="${suggestionPrefix}--subcategory-column">
         <span class="${suggestionPrefix}--subcategory-column-text">{{{subcategory}}}</span>
       </div>

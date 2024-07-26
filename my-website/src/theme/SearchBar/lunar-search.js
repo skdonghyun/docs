@@ -29,6 +29,7 @@ class LunrSearchAdapter {
             },
             url: doc.url,
             version: doc.version,
+            system: doc.url.split('/')[1] || 'General', // 시스템 이름 추가
             _snippetResult: formattedContent ? {
                 content: {
                     value: formattedContent,
@@ -50,6 +51,7 @@ class LunrSearchAdapter {
             }
         };
     }
+
     getTitleHit(doc, position, length) {
         const start = position[0];
         const end = position[0] + length;
@@ -111,8 +113,8 @@ class LunrSearchAdapter {
             preview += ' ...';
         }
         return this.getHit(doc, null, preview);
-
     }
+
     search(input) {
         return new Promise((resolve, rej) => {
             const results = this.getLunrResult(input);

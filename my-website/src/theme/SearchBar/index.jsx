@@ -5,6 +5,7 @@ import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { usePluginData } from '@docusaurus/useGlobalData';
 import useIsBrowser from "@docusaurus/useIsBrowser";
 import { HighlightSearchResults } from "./HighlightSearchResults";
+
 const Search = props => {
   const initialized = useRef(false);
   const searchBarRef = useRef(null);
