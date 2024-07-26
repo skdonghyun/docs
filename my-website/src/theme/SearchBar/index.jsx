@@ -5,31 +5,34 @@ import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { usePluginData } from '@docusaurus/useGlobalData';
 import useIsBrowser from "@docusaurus/useIsBrowser";
 import { HighlightSearchResults } from "./HighlightSearchResults";
-
 const Search = props => {
   const initialized = useRef(false);
   const searchBarRef = useRef(null);
   const [indexReady, setIndexReady] = useState(false);
   const history = useHistory();
   const { siteConfig = {} } = useDocusaurusContext();
-  const pluginConfig = (siteConfig.plugins || []).find(plugin => Array.isArray(plugin) && typeof plugin[0] === "string" && plugin[0].includes("docusaurus-lunr-search"));
+  const pluginConfig = (siteConfig.plugins || []).find(plugin => Array.isArray(plugin) && typeof plugin[0] === "string" && plugin[0].includes("docusaurus-lunr-search"))
   const isBrowser = useIsBrowser();
   const { baseUrl } = siteConfig;
   const assetUrl = pluginConfig && pluginConfig[1]?.assetUrl || baseUrl;
-
   const initAlgolia = (searchDocs, searchIndex, DocSearch, options) => {
     new DocSearch({
       searchDocs,
       searchIndex,
       baseUrl,
       inputSelector: "#search_input_react",
+      // Override algolia's default selection event, allowing us to do client-side
+      // navigation and avoiding a full page refresh.
       handleSelected: (_input, _event, suggestion) => {
         const url = suggestion.url || "/";
+        // Use an anchor tag to parse the absolute url into a relative url
+        // Alternatively, we can use new URL(suggestion.url) but its not supported in IE
         const a = document.createElement("a");
         a.href = url;
         _input.setVal(''); // clear value
         _event.target.blur(); // remove focus
 
+        // Get the highlight word from the suggestion.
         let wordToHighlight = '';
         if (options.highlightResult) {
           try {
@@ -94,12 +97,14 @@ const Search = props => {
     [props.isSearchBarExpanded]
   );
 
-  let placeholder;
+  let placeholder
   if (isBrowser) {
     loadAlgolia();
-    placeholder = window.navigator.platform.startsWith("Mac") ? 'Search ⌘+K' : 'Search Ctrl+K';
+    placeholder = window.navigator.platform.startsWith("Mac") ?
+      'Search ⌘+K' : 'Search Ctrl+K'
   }
 
+  // auto focus search bar on page load
   useEffect(() => {
     if (props.autoFocus && indexReady) {
       searchBarRef.current.focus();
@@ -128,11 +133,6 @@ const Search = props => {
           { "search-bar-expanded": props.isSearchBarExpanded },
           { "search-bar": !props.isSearchBarExpanded }
         )}
-        onChange={(e) => {
-          if (indexReady) {
-            props.onSearch(e.target.value);
-          }
-        }}
         onClick={loadAlgolia}
         onMouseOver={loadAlgolia}
         onFocus={toggleSearchIconClick}
