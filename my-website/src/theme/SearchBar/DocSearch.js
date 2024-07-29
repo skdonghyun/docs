@@ -82,7 +82,7 @@ class DocSearch {
             "autocomplete:shown",
             this.handleShown.bind(null, this.input)
         );
-
+        
         if (enhancedSearchInput) {
             DocSearch.bindSearchBoxEvent();
         }
@@ -182,20 +182,23 @@ class DocSearch {
             return utils.mergeKeyWithParent(hit, "hierarchy");
         });
 
-        // Group hits by category / subcategory
-        let groupedHits = utils.groupBy(hits, "lvl0");
-        $.each(groupedHits, (level, collection) => {
-            const groupedHitsByLvl1 = utils.groupBy(collection, "lvl1");
-            const flattenedHits = utils.flattenAndFlagFirst(
-                groupedHitsByLvl1,
-                "isSubCategoryHeader"
-            );
-            groupedHits[level] = flattenedHits;
+         // Group hits by system
+        let groupedHitsBySystem = utils.groupBy(hits, "system");
+        
+        let finalGroupedHits = [];
+        
+        // For each system, add system header and its hits
+        Object.keys(groupedHitsBySystem).forEach(system => {
+            finalGroupedHits.push({
+                isSystemHeader: true,
+                system: system
+            });
+
+            finalGroupedHits = finalGroupedHits.concat(groupedHitsBySystem[system]);
         });
-        groupedHits = utils.flattenAndFlagFirst(groupedHits, "isCategoryHeader");
 
         // Translate hits into smaller objects to be send to the template
-        return groupedHits.map(hit => {
+        return finalGroupedHits.map(hit => {
             const url = DocSearch.formatURL(hit);
             const category = utils.getHighlightedValue(hit, "lvl0");
             const subcategory = utils.getHighlightedValue(hit, "lvl1") || category;
@@ -306,6 +309,17 @@ class DocSearch {
             autocompleteWrapper.removeClass(otherAlignClass);
         }
     }
+
+    handleRender(event, suggestion, dataset, context) {
+        const footer = document.querySelector('.algolia-docsearch--see-all-results');
+        if (footer) {
+          footer.addEventListener('click', (e) => {
+            e.preventDefault();
+            const query = this.input.value;
+            this.onSeeAllResults(query);
+          });
+        }
+      }
 }
 
 export default DocSearch;

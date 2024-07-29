@@ -118,31 +118,44 @@ class LunrSearchAdapter {
     search(input) {
         return new Promise((resolve, rej) => {
             const results = this.getLunrResult(input);
+            const hitsPerSystem = {};
             const hits = [];
-            results.length > this.maxHits && (results.length = this.maxHits);
-            this.titleHitsRes = []
-            this.contentHitsRes = []
+
             results.forEach(result => {
                 const doc = this.searchDocs[result.ref];
-                const { metadata } = result.matchData;
-                for (let i in metadata) {
-                    if (metadata[i].title) {
-                        if (!this.titleHitsRes.includes(result.ref)) {
-                            const position = metadata[i].title.position[0]
+                const system = doc.url.split('/')[1] || 'General';
+
+                if (!hitsPerSystem[system]) {
+                    hitsPerSystem[system] = [];
+                }
+
+                if (hitsPerSystem[system].length < 3) {
+                    const { metadata } = result.matchData;
+                    for (let i in metadata) {
+                        if (metadata[i].title) {
+                            const position = metadata[i].title.position[0];
                             hits.push(this.getTitleHit(doc, position, input.length));
-                            this.titleHitsRes.push(result.ref);
+                            hitsPerSystem[system].push(doc);
+                            break;
+                        } else if (metadata[i].content) {
+                            const position = metadata[i].content.position[0];
+                            hits.push(this.getContentHit(doc, position));
+                            hitsPerSystem[system].push(doc);
+                            break;
+                        } else if (metadata[i].keywords) {
+                            const position = metadata[i].keywords.position[0];
+                            hits.push(this.getKeywordHit(doc, position, input.length));
+                            hitsPerSystem[system].push(doc);
+                            break;
                         }
-                    } else if (metadata[i].content) {
-                        const position = metadata[i].content.position[0]
-                        hits.push(this.getContentHit(doc, position))
-                    } else if (metadata[i].keywords) {
-                        const position = metadata[i].keywords.position[0]
-                        hits.push(this.getKeywordHit(doc, position, input.length));
-                        this.titleHitsRes.push(result.ref);
                     }
                 }
+
+                if (Object.values(hitsPerSystem).flat().length >= this.maxHits) {
+                    return false; // break the forEach loop
+                }
             });
-            hits.length > this.maxHits && (hits.length = this.maxHits);
+
             resolve(hits);
         });
     }

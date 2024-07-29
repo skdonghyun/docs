@@ -75,8 +75,9 @@ const templates = {
   </div>
   `,
   footer: `
-    <div class="${footerPrefix}">
-    </div>
+  <div class="${suggestionPrefix}--footer">
+    <span class="${suggestionPrefix}--footer__logo">Search by <img src="https://www.algolia.com/static_assets/images/pricing/pricing_new/algolia-logo.svg" alt="Algolia" /></span>
+  </div>
   `,
   empty: `
   <div class="${suggestionPrefix}">
