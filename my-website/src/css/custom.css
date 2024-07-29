@@ -30,3 +30,64 @@
 }
 
 
+/* 검색 결과 페이지 스타일 */
+.search-results {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.search-results h1 {
+  color: var(--ifm-color-primary);
+  margin-bottom: 20px;
+}
+
+.search-results ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.search-results li {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 4px;
+  transition: box-shadow 0.3s ease;
+}
+
+.search-results li:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.search-results a {
+  color: var(--ifm-color-primary);
+  font-size: 1.2em;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.search-results a:hover {
+  text-decoration: underline;
+}
+
+.search-results p {
+  margin-top: 10px;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.search-result-system {
+  font-size: 0.9em;
+  color: var(--ifm-color-emphasis-600);
+  margin-bottom: 5px;
+}
+
+.search-result-category {
+  font-size: 0.9em;
+  color: var(--ifm-color-emphasis-600);
+  margin-bottom: 5px;
+}
+
+.search-results mark {
+  background-color: yellow;
+  color: black;
+}
