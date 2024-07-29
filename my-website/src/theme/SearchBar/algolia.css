@@ -654,3 +654,20 @@ mark{
   margin-left: 10px;
   white-space: nowrap;
 }
+
+.algolia-docsearch-footer {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.algolia-docsearch-footer__view-all-results {
+  color: var(--ifm-color-primary);
+  font-weight: bold;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.algolia-docsearch-footer__view-all-results:hover {
+  color: var(--ifm-color-primary-dark);
+  text-decoration: underline;
+}

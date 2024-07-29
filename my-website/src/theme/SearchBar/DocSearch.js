@@ -82,6 +82,12 @@ class DocSearch {
             "autocomplete:shown",
             this.handleShown.bind(null, this.input)
         );
+
+        $(document).on('click', `.algolia-docsearch-footer__view-all-results`, (e) => {
+            e.preventDefault();
+            const query = this.input.val();
+            this.viewAllResults(query);
+        });
         
         if (enhancedSearchInput) {
             DocSearch.bindSearchBoxEvent();
@@ -96,6 +102,13 @@ class DocSearch {
                 e.preventDefault();
             }
         });
+    }
+
+      viewAllResults(query) {
+        // Implement the logic to show all results
+        // This could be navigating to a new page or opening a modal
+        const searchResultsUrl = `/search-results?q=${encodeURIComponent(query)}`;
+        window.location.href = searchResultsUrl;
     }
 
     static injectSearchBox(input) {
