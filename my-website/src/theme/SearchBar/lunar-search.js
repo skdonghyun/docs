@@ -7,16 +7,40 @@ class LunrSearchAdapter {
         this.lunrIndex = lunr.Index.load(searchIndex);
         this.baseUrl = baseUrl;
         this.maxHits = maxHits;
+
+        // try {
+        //     if (searchIndex && typeof searchIndex === 'object' && searchIndex.version) {
+        //         // Lunr 인덱스의 유효성 검사
+        //         if (!searchIndex.pipeline || !Array.isArray(searchIndex.pipeline)) {
+        //             console.error('Invalid Lunr index: pipeline is missing or not an array');
+        //             this.lunrIndex = null;
+        //         } else {
+        //             this.lunrIndex = lunr.Index.load(searchIndex);
+        //         }
+        //     } else {
+        //         console.error('Invalid or missing search index');
+        //         this.lunrIndex = null;
+        //     }
+        // } catch (error) {
+        //     console.error('Error loading Lunr index:', error);
+        //     this.lunrIndex = null;
+        // }
     }
 
     getLunrResult(input) {
-        return this.lunrIndex.query(function (query) {
+        if (!this.lunrIndex) {
+            return [];
+        }
+        return this.lunrIndex.query((query) => {
             const tokens = lunr.tokenizer(input);
-            query.term(tokens, {
-                boost: 10
-            });
-            query.term(tokens, {
-                wildcard: lunr.Query.wildcard.TRAILING
+            tokens.forEach((token) => {
+                const queryString = token.toString();
+                query.term(queryString, {
+                    boost: 10
+                });
+                query.term(queryString, {
+                    wildcard: lunr.Query.wildcard.TRAILING
+                });
             });
         });
     }
@@ -159,6 +183,99 @@ class LunrSearchAdapter {
             resolve(hits);
         });
     }
+
+    searchAll(input) {
+        return new Promise((resolve, rej) => {
+
+            console.log('searchAll===================');
+            try {
+                const results = this.getLunrResult(input);
+                console.log(results);
+                const hits = [];
+        
+                results.forEach(result => {
+                    const doc = this.searchDocs[result.ref];
+                    console.log(doc);
+                    const { metadata } = result.matchData;
+                    
+                    for (let i in metadata) {
+                        if (metadata[i].title) {
+                            const position = metadata[i].title.position[0];
+                            hits.push(this.getTitleHit(doc, position, input.length));
+                            break;
+                        } else if (metadata[i].content) {
+                            const position = metadata[i].content.position[0];
+                            hits.push(this.getContentHit(doc, position));
+                            break;
+                        } else if (metadata[i].keywords) {
+                            const position = metadata[i].keywords.position[0];
+                            hits.push(this.getKeywordHit(doc, position, input.length));
+                            break;
+                        }
+                    }
+                });
+        
+                resolve(hits);
+            }catch (error) {
+                console.error('Search error:', error);
+                resolve([]);
+            }
+        });
+    }
+
+
+    searchInstance(query, startIndex = 0, limit = 20) {
+        return new Promise((resolve) => {
+            if (!this.lunrIndex) {
+                resolve({ results: [], hasMore: false });
+                return;
+            }
+          const results = this.lunrIndex.query((lunrQuery) => {
+            const tokens = lunr.tokenizer(query);
+            tokens.forEach((token) => {
+              const tokenString = token.toString();
+              lunrQuery.term(tokenString, {
+                boost: 10
+              });
+              lunrQuery.term(tokenString, {
+                wildcard: lunr.Query.wildcard.TRAILING
+              });
+            });
+          });
+    
+          const searchResults = results
+            .slice(startIndex, startIndex + limit)
+            .map((result) => {
+              const doc = this.searchDocs[result.ref];
+              return {
+                id: result.ref,
+                score: result.score,
+                title: doc.title,
+                url: doc.url,
+                content: this.getSnippet(doc.content, query),
+                // 필요한 경우 추가 필드
+              };
+            });
+    
+          resolve({
+            results: searchResults,
+            hasMore: results.length > startIndex + limit
+          });
+        });
+      }
+    
+      getSnippet(content, query, snippetLength = 150) {
+        const lowerContent = content.toLowerCase();
+        const lowerQuery = query.toLowerCase();
+        const index = lowerContent.indexOf(lowerQuery);
+        if (index === -1) {
+          return content.slice(0, snippetLength) + "...";
+        }
+        const start = Math.max(0, index - snippetLength / 2);
+        const end = Math.min(content.length, index + snippetLength / 2);
+        return (start > 0 ? "..." : "") + content.slice(start, end) + (end < content.length ? "..." : "");
+      }
+    
 }
 
 export default LunrSearchAdapter;

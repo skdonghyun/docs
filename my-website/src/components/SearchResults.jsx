@@ -1,94 +1,119 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from '@docusaurus/router';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import React, { useRef, useCallback, useState, useEffect } from "react";
+import { useHistory, useLocation } from "@docusaurus/router";
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { usePluginData } from '@docusaurus/useGlobalData';
-import LunrSearchAdapter from '../components/LunrSearchAdapter';
+import useIsBrowser from "@docusaurus/useIsBrowser";
+import LunrSearchAdapter from '@site/src/theme/SearchBar/lunar-search';
 
 function SearchResults() {
-    const [results, setResults] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const location = useLocation();
-    const { siteConfig } = useDocusaurusContext();
-    const { indexHash } = usePluginData('docusaurus-lunr-search');
-    const [searchAdapter, setSearchAdapter] = useState(null);
+  const initialized = useRef(false);
+  const [indexReady, setIndexReady] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const history = useHistory();
+  const location = useLocation();
+  const { siteConfig = {} } = useDocusaurusContext();
+  const isBrowser = useIsBrowser();
+  const { baseUrl } = siteConfig;
+  const searchClientRef = useRef(null);
 
-    useEffect(() => {
-        const loadSearchData = async () => {
-            try {
-                const [searchIndexData, searchDocumentData] = await Promise.all([
-                    fetch(`/lunr-index.json`).then(res => res.json()),
-                    fetch(`/search-doc.json`).then(res => res.json())
-                ]);
-                
-                const adapter = new LunrSearchAdapter(searchDocumentData, searchIndexData);
-                setSearchAdapter(adapter);
-            } catch (error) {
-                console.error('Error loading search data:', error);
-            }
-        };
+  const initSearchClient = useCallback((searchDocs, searchIndex, options) => {
+    searchClientRef.current = new LunrSearchAdapter(searchDocs, searchIndex, baseUrl, options);
+  }, [baseUrl]);
 
-        loadSearchData();
-    }, [indexHash]);
+  const pluginData = usePluginData('docusaurus-lunr-search');
+  const getSearchDoc = useCallback(() =>
+    process.env.NODE_ENV === "production"
+      ? fetch(`${baseUrl}${pluginData.fileNames.searchDoc}`).then((content) => content.json())
+      : Promise.resolve([]),
+    [baseUrl, pluginData]
+  );
 
-    useEffect(() => {
-        const searchParams = new URLSearchParams(location.search);
-        const query = searchParams.get('q');
+  const getLunrIndex = useCallback(() =>
+    process.env.NODE_ENV === "production"
+      ? fetch(`${baseUrl}${pluginData.fileNames.lunrIndex}`).then((content) => content.json())
+      : Promise.resolve([]),
+    [baseUrl, pluginData]
+  );
 
-        if (query && searchAdapter) {
-            performSearch(query);
+  const loadAlgolia = useCallback(() => {
+    if (!initialized.current) {
+      Promise.all([
+        getSearchDoc(),
+        getLunrIndex(),
+      ]).then(([searchDocs, searchIndex]) => {
+        if (!searchDocs || searchDocs.length === 0) {
+          return;
         }
-    }, [location, searchAdapter]);
-
-    const performSearch = async (query) => {
-        setLoading(true);
-        try {
-            const searchResults = await searchAdapter.search(query);
-            
-            const formattedResults = searchResults.map(result => ({
-                system: result.system,
-                category: result.hierarchy?.lvl0 || '',
-                title: result.hierarchy?.lvl1 || result.hierarchy?.lvl0 || '',
-                url: result.url,
-                snippet: highlightSearchTerms(result._snippetResult?.content?.value || '', query),
-            }));
-
-            setResults(formattedResults);
-        } catch (error) {
-            console.error('Error performing search:', error);
-            setResults([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const highlightSearchTerms = (content, query) => {
-        const words = query.split(' ');
-        words.forEach(word => {
-            const regex = new RegExp(word, 'gi');
-            content = content.replace(regex, match => `<mark>${match}</mark>`);
+        initSearchClient(searchDocs, searchIndex, {
+          highlightResult: true,
+          maxHits: 100
         });
-        return content;
-    };
+        setIndexReady(true);
+      });
+      initialized.current = true;
+    }
+  }, [getSearchDoc, getLunrIndex, initSearchClient]);
 
-    return (
-        <div className="search-results">
-            <h1>Search Results</h1>
-            {results.length === 0 ? (
-                <p>No results found.</p>
-            ) : (
-                <ul>
-                    {results.map((result, index) => (
-                        <li key={index}>
-                            <div className="search-result-system">{result.system}</div>
-                            <div className="search-result-category">{result.category}</div>
-                            <a href={`${siteConfig.baseUrl}${result.url}`}>{result.title}</a>
-                            <p dangerouslySetInnerHTML={{ __html: result.snippet }}></p>
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
-    );
+  useEffect(() => {
+    if (isBrowser) {
+      loadAlgolia();
+    }
+  }, [isBrowser, loadAlgolia]);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const query = searchParams.get('q');
+    setSearchQuery(query);
+
+    if (query && indexReady && searchClientRef.current) {
+      performSearch(query);
+    }
+  }, [location.search, indexReady]);
+
+  const performSearch = async (query) => {
+    if (!searchClientRef.current) {
+      console.warn('Search client is not initialized');
+      return;
+    }
+    try {
+      const results = await searchClientRef.current.searchAll(query);
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Search error:', error);
+    }
+  };
+
+  const handleSearchItemClick = useCallback((item) => {
+    const { url } = item;
+    history.push(url);
+  }, [history]);
+
+  if (!indexReady) {
+    return <div>Loading search index...</div>;
+  }
+
+  return (
+    <div className="search-results-container">
+      <h1>Search Results for: {searchQuery}</h1>
+      {searchResults.length === 0 ? (
+        <p>No results found.</p>
+      ) : (
+        <>
+          <p>Total results: {searchResults.length}</p>
+          {searchResults.map((result, index) => (
+            <div key={index} className="search-result-item" onClick={() => handleSearchItemClick(result)}>
+              <h2>{result.title}</h2>
+              {result.hierarchy && result.hierarchy.lvl1 && <p>{result.hierarchy.lvl1}</p>}
+              {result._snippetResult?.content?.value && (
+                <p dangerouslySetInnerHTML={{ __html: result._snippetResult.content.value }} />
+              )}
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
 }
 
 export default SearchResults;
