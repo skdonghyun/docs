@@ -16,7 +16,7 @@ class DocSearch {
         autocompleteOptions = {
             debug: true,
             hint: false,
-            autoselect: true
+            autoselect: false
         },
         transformData = false,
         queryHook = false,
@@ -95,6 +95,12 @@ class DocSearch {
 
         // Ctrl/Cmd + K should focus the search bar, emulating the Algolia search UI
         document.addEventListener('keydown',  (e) => {
+
+            if (e.key =='Enter'){
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+
             if ((e.ctrlKey || e.metaKey) && e.key == 'k') {
                 this.input.focus();
 
